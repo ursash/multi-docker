@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t ursash/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run  -e CI=true ursash/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t ursash/multi-client ./client
+  - docker build -t ursash/multi-nginx ./nginx
+  - docker build -t ursash/multi-server ./server
+  - docker build -t ursash/multi-worker ./worker
+  # Lon in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push ursash/multi-client
+  - docker push ursash/multi-nginx
+  - docker push ursash/multi-server
+  - docker push ursash/multi-worker
